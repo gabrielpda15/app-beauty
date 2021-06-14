@@ -1,0 +1,27 @@
+<resources>
+    <string name="app_name">App Beauty</string>
+    <string name="today_text">Hoje</string>
+    <string name="schedule_text">Agendar</string>
+    <string name="calendar_text">Calendário</string>
+    <string name="prompt_name">Nome</string>
+    <string name="prompt_email">Usuário</string>
+    <string name="prompt_password">Senha</string>
+    <string name="prompt_value">Valor</string>
+    <string name="prompt_client">Nome do Cliente</string>
+    <string name="prompt_service">Serviço</string>
+    <string name="action_sign_in">Entrar</string>
+    <string name="action_create">Criar</string>
+    <string name="action_save">Salvar</string>
+    <string name="invalid_name">Nome é inválido</string>
+    <string name="invalid_username">Usuário é inválido</string>
+    <string name="invalid_value">Valor deve ser maior que 0</string>
+    <string name="invalid_password">A senha precisa ter no mínimo 6 caracteres</string>
+    <string name="login_failed">Usuário e/ou senha incorretos!</string>
+    <string name="available_text">Disponíveis:</string>
+    <string name="busy_text">Ocupados:</string>
+    <string name="new_user_text">Novo usuário</string>
+    <string name="edit_user_text">Editar usuário</string>
+    <string name="delete_user_text">Excluir usuário</string>
+    <string name="success_new_user">Usuário criado com sucesso!</string>
+    <string name="success_edit_user">Usuário editado com sucesso!</string>
+</resources>
