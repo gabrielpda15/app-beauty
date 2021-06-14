@@ -54,6 +54,31 @@ public class DatabaseController {
         return null;
     }
 
+    public Professional[] getProfessional() {
+        Cursor cursor;
+        String[] fields =  {"_id", "name", "username", "password"};
+        db = helper.getReadableDatabase();
+        cursor = db.query("professional", fields, "username<>'admin'", null, null, null, null, null);
+
+        if (cursor != null && cursor.moveToFirst()) {
+            ArrayList<Professional> list = new ArrayList<>();
+            do {
+                Professional temp = new Professional();
+                temp.setId(cursor.getLong(0));
+                temp.setName(cursor.getString(1));
+                temp.setUsername(cursor.getString(2));
+                temp.setPassword(cursor.getString(3));
+                list.add(temp);
+            } while (cursor.moveToNext());
+
+            db.close();
+            return list.toArray(new Professional[0]);
+        }
+
+        db.close();
+        return null;
+    }
+
     public Professional getProfessionalByUsername(String username) {
         Cursor cursor;
         String[] fields =  {"_id", "name", "username", "password"};
@@ -102,29 +127,31 @@ public class DatabaseController {
     }
 
     public Professional editProfessional(Professional obj) {
-        Professional objId = getProfessionalByUsername(obj.getUsername());
-        if (objId != null && objId.getId() > 0) {
-            ContentValues values;
-            long result;
+        ContentValues values;
+        long result;
 
-            db = helper.getWritableDatabase();
+        db = helper.getWritableDatabase();
 
-            values = new ContentValues();
-            values.put("name", obj.getName());
-            values.put("username", obj.getUsername());
-            values.put("password", obj.getPassword());
+        values = new ContentValues();
+        values.put("name", obj.getName());
+        values.put("username", obj.getUsername());
+        values.put("password", obj.getPassword());
 
-            result = db.update("professional", values, "_id="+objId.getId(), null);
+        result = db.update("professional", values, "_id=" + obj.getId(), null);
+        db.close();
 
-            if (result == -1) {
-                return null;
-            }
-
-            obj.setId(result);
-            return obj;
+        if (result == -1) {
+            return null;
         }
 
-        return null;
+        obj.setId(result);
+        return obj;
+    }
+
+    public void deleteProfessional(long id) {
+        db = helper.getWritableDatabase();
+        db.delete("professional","_id=" + id, null);
+        db.close();
     }
 
     public Schedule[] getSchedule(long userId, Date date) {

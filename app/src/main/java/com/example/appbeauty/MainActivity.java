@@ -1,18 +1,23 @@
 package com.example.appbeauty;
 
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.DialogFragment;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CalendarView;
 import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.appbeauty.database.DatabaseController;
@@ -20,8 +25,14 @@ import com.example.appbeauty.dialogs.DatePickerFragment;
 import com.example.appbeauty.models.Professional;
 import com.example.appbeauty.models.Schedule;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -34,7 +45,8 @@ public class MainActivity extends AppCompatActivity {
             R.id.activitySchedule,
             R.id.activityCalendar,
             R.id.activityNewUser,
-            R.id.activityEditUser
+            R.id.activityEditUser,
+            R.id.activityDeleteUser
     };
 
     @Override
@@ -56,6 +68,9 @@ public class MainActivity extends AppCompatActivity {
             case R.id.btnEditUser:
                 changeActivatedScreen(4);
                 return true;
+            case R.id.btnDeleteUser:
+                changeActivatedScreen(5);
+                return true;
         }
 
         return super.onOptionsItemSelected(item);
@@ -74,11 +89,13 @@ public class MainActivity extends AppCompatActivity {
         final View activityCalendar = findViewById(R.id.activityCalendar);
         final View activityNewUser = findViewById(R.id.activityNewUser);
         final View activityEditUser = findViewById(R.id.activityEditUser);
+        final View activityDeleteUser = findViewById(R.id.activityDeleteUser);
         activityToday.setVisibility(View.GONE);
         activitySchedule.setVisibility(View.GONE);
         activityCalendar.setVisibility(View.GONE);
         activityNewUser.setVisibility(View.GONE);
         activityEditUser.setVisibility(View.GONE);
+        activityDeleteUser.setVisibility(View.GONE);
 
         final Button btnToday = findViewById(R.id.btnToday);
         final Button btnSchedule = findViewById(R.id.btnSchedule);
@@ -90,18 +107,15 @@ public class MainActivity extends AppCompatActivity {
         final EditText newUserPassword = activityNewUser.findViewById(R.id.txtPassword);
         final Button btnSaveUser = activityEditUser.findViewById(R.id.btnSaveUser);
         final Spinner spinner = activityEditUser.findViewById(R.id.spinner);
+        final TextView txtEditId = activityEditUser.findViewById(R.id.txtEditId);
         final EditText txtEditName = activityEditUser.findViewById(R.id.txtEditName);
         final EditText txtEditUsername = activityEditUser.findViewById(R.id.txtEditUsername);
         final EditText txtEditPassword = activityEditUser.findViewById(R.id.txtEditPassword);
+        final Button btnRemoveUser = activityDeleteUser.findViewById(R.id.btnRemoveUser);
+        final Spinner deleteSpinner = activityDeleteUser.findViewById(R.id.deleteSpinner);
+        final TextView txtDeleteId = activityDeleteUser.findViewById(R.id.txtDeleteId);
         final CalendarView calendar = activityCalendar.findViewById(R.id.calendarView);
         final Button btnSelectDate = activitySchedule.findViewById(R.id.btnSelectDate);
-
-
-/*
-        ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<String>(
-                activityEditUser.getContext(), android.R.layout.simple_spinner_item, new String[]{ "Teste", "2" });
-        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinner.setAdapter(spinnerAdapter);*/
 
         btnToday.setOnClickListener(v -> {
             changeActivatedScreen(0);
@@ -123,10 +137,17 @@ public class MainActivity extends AppCompatActivity {
         });
 
         btnSaveUser.setOnClickListener(v -> {
+            final long id = Long.parseLong(txtEditId.getText().toString());
             final String name = txtEditName.getText().toString();
             final String username = txtEditUsername.getText().toString();
             final String password = txtEditPassword.getText().toString();
-            editUser(name, username, password);
+            editUser(id, name, username, password);
+        });
+
+        btnRemoveUser.setOnClickListener(v -> {
+            final long id = Long.parseLong(txtDeleteId.getText().toString());
+            dbController.deleteProfessional(id);
+            changeActivatedScreen(0);
         });
 
         btnSelectDate.setOnClickListener(v -> {
@@ -141,6 +162,30 @@ public class MainActivity extends AppCompatActivity {
             Schedule[] result = dbController.getSchedule(userId, calendarTemp.getTime());
         });
 
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                Professional[] result = dbController.getProfessional();
+                txtEditId.setText(Long.toString(result[position].getId()));
+                txtEditName.setText(result[position].getName());
+                txtEditUsername.setText(result[position].getUsername());
+                txtEditPassword.setText(result[position].getPassword());
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) { }
+        });
+
+        deleteSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                Professional[] result = dbController.getProfessional();
+                txtDeleteId.setText(Long.toString(result[position].getId()));
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) { }
+        });
 
 
         changeActivatedScreen(activatedScreen);
@@ -164,7 +209,49 @@ public class MainActivity extends AppCompatActivity {
             case 2:
 
                 break;
+            case 4:
+                final View activityEditUser = findViewById(R.id.activityEditUser);
+                final Spinner spinner = activityEditUser.findViewById(R.id.spinner);
+
+                Professional[] result = dbController.getProfessional();
+
+                ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<String>(
+                        activityEditUser.getContext(), android.R.layout.simple_spinner_item, selectProfessionalNames(result));
+                spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                spinner.setAdapter(spinnerAdapter);
+
+                final TextView txtId = activityEditUser.findViewById(R.id.txtEditId);
+                final EditText txtName = activityEditUser.findViewById(R.id.txtEditName);
+                final EditText txtUsername = activityEditUser.findViewById(R.id.txtEditUsername);
+                final EditText txtPassword = activityEditUser.findViewById(R.id.txtEditPassword);
+                txtId.setText(Long.toString(result[0].getId()));
+                txtName.setText(result[0].getName());
+                txtUsername.setText(result[0].getUsername());
+                txtPassword.setText(result[0].getPassword());
+                break;
+            case 5:
+                final View activityDeleteUser = findViewById(R.id.activityDeleteUser);
+                final Spinner deleteSpinner = activityDeleteUser.findViewById(R.id.deleteSpinner);
+
+                Professional[] deleteResult = dbController.getProfessional();
+
+                ArrayAdapter<String> deleteSpinnerAdapter = new ArrayAdapter<String>(
+                        activityDeleteUser.getContext(), android.R.layout.simple_spinner_item, selectProfessionalNames(deleteResult));
+                deleteSpinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                deleteSpinner.setAdapter(deleteSpinnerAdapter);
+
+                final TextView txtDeleteId = activityDeleteUser.findViewById(R.id.txtDeleteId);
+                txtDeleteId.setText(Long.toString(deleteResult[0].getId()));
+                break;
         }
+    }
+
+    private String[] selectProfessionalNames(Professional[] values) {
+        ArrayList<String> list = new ArrayList<String>();
+        for (int i = 0; i < values.length; i++) {
+            list.add(values[i].getName());
+        }
+        return list.toArray(new String[0]);
     }
 
     private void createNewUser(String name, String username, String password) {
@@ -192,11 +279,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void editUser(String name, String username, String password) {
+    private void editUser(long id, String name, String username, String password) {
         if (HasValue(name)) {
             if (HasValue(username)) {
                 if (HasValue(password) && password.length() > 5) {
                     Professional professional = new Professional();
+                    professional.setId(id);
                     professional.setName(name);
                     professional.setUsername(username);
                     professional.setPassword(password);
