@@ -13,6 +13,7 @@
     <string name="action_create">Criar</string>
     <string name="action_save">Salvar</string>
     <string name="action_delete">Excluir</string>
+    <string name="action_select_date">Selecionar data</string>
     <string name="invalid_name">Nome é inválido</string>
     <string name="invalid_username">Usuário é inválido</string>
     <string name="invalid_value">Valor deve ser maior que 0</string>

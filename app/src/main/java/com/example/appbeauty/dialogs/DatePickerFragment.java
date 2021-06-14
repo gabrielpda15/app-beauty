@@ -24,6 +24,7 @@ public class DatePickerFragment extends DialogFragment implements DatePickerDial
     }
 
     public void onDateSet(DatePicker view, int year, int month, int day) {
+
         Intent intent = new Intent();
         intent.putExtra("dialog", "datepicker");
         intent.putExtra("year", year);

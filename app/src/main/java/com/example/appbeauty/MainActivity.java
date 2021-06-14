@@ -1,12 +1,8 @@
 package com.example.appbeauty;
 
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.DialogFragment;
 
-import android.app.Activity;
-import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -30,15 +26,16 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 public class MainActivity extends AppCompatActivity {
 
     private DatabaseController dbController;
     private int activatedScreen = 0;
     private Professional user = null;
+
+    private final String[] hours = new String[] {
+        "0900", "1000", "1100", "1200", "1300", "1400", "1500", "1600", "1700", "1800", "1900"
+    };
 
     private final int[] screens = new int[] {
             R.id.activityToday,
@@ -115,6 +112,8 @@ public class MainActivity extends AppCompatActivity {
         final Spinner deleteSpinner = activityDeleteUser.findViewById(R.id.deleteSpinner);
         final TextView txtDeleteId = activityDeleteUser.findViewById(R.id.txtDeleteId);
         final CalendarView calendar = activityCalendar.findViewById(R.id.calendarView);
+        final TextView availableValues = activityCalendar.findViewById(R.id.availableValues);
+        final TextView busyValues = activityCalendar.findViewById(R.id.busyValues);
         final Button btnSelectDate = activitySchedule.findViewById(R.id.btnSelectDate);
 
         btnToday.setOnClickListener(v -> {
@@ -160,6 +159,50 @@ public class MainActivity extends AppCompatActivity {
             Calendar calendarTemp = Calendar.getInstance();
             calendarTemp.set(year, month, day, 0, 0, 0);
             Schedule[] result = dbController.getSchedule(userId, calendarTemp.getTime());
+            if (result != null && result.length > 0) {
+                StringBuilder available = new StringBuilder();
+                StringBuilder busy = new StringBuilder();
+
+                String[] busyDates = selectScheduleDate(result);
+
+                for (int i = 0; i < hours.length; i++) {
+                    boolean contains = false;
+                    for (int j = 0; j < busyDates.length; j++) {
+                        busy.append(busyDates[j].charAt(0));
+                        busy.append(busyDates[j].charAt(1));
+                        busy.append(":");
+                        busy.append(busyDates[j].charAt(2));
+                        busy.append(busyDates[j].charAt(3));
+                        busy.append("\n");
+                        if (hours[i].equals(busyDates[j])) {
+                            contains = true;
+                        }
+                    }
+
+                    if (!contains) {
+                        available.append(hours[i].charAt(0));
+                        available.append(hours[i].charAt(1));
+                        available.append(":");
+                        available.append(hours[i].charAt(2));
+                        available.append(hours[i].charAt(3));
+                        available.append("\n");
+                    }
+                }
+
+                availableValues.setText(available.toString());
+                busyValues.setText(busy.toString());
+            } else {
+                StringBuilder tempBuilder = new StringBuilder();
+                for (int i = 0; i < hours.length; i++) {
+                    tempBuilder.append(hours[i].charAt(0));
+                    tempBuilder.append(hours[i].charAt(1));
+                    tempBuilder.append(":");
+                    tempBuilder.append(hours[i].charAt(2));
+                    tempBuilder.append(hours[i].charAt(3));
+                    tempBuilder.append("\n");
+                }
+                availableValues.setText(tempBuilder.toString());
+            }
         });
 
         spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -205,9 +248,12 @@ public class MainActivity extends AppCompatActivity {
     private void onScreenChanged(int screen) {
         switch (screen) {
             case 0:
-
+                break;
+            case 1:
+                break;
             case 2:
-
+                break;
+            case 3:
                 break;
             case 4:
                 final View activityEditUser = findViewById(R.id.activityEditUser);
@@ -247,11 +293,39 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private String[] selectProfessionalNames(Professional[] values) {
-        ArrayList<String> list = new ArrayList<String>();
+        ArrayList<String> list = new ArrayList<>();
         for (int i = 0; i < values.length; i++) {
             list.add(values[i].getName());
         }
         return list.toArray(new String[0]);
+    }
+
+    private String[] selectScheduleDate(Schedule[] values) {
+        ArrayList<String> list = new ArrayList<>();
+        for (int i = 0; i < values.length; i++) {
+            list.addAll(getMilitaryHour(values[i].getDate(), values[i].getLength()));
+        }
+        String[] array = list.toArray(new String[0]);
+        return array;
+    }
+
+    private List<String> getMilitaryHour(Date value, int nHours) {
+        String[] result = new String[nHours];
+
+        for (int i = 0; i < nHours; i++) {
+            Calendar tempCalendar = Calendar.getInstance();
+            tempCalendar.setTime(value);
+            int hour = tempCalendar.get(Calendar.HOUR_OF_DAY) + i;
+            int minutes = tempCalendar.get(Calendar.MINUTE);
+            StringBuilder v = new StringBuilder();
+            if (hour < 10) v.append("0");
+            v.append(hour);
+            if (minutes < 10) v.append("0");
+            v.append(minutes);
+            result[i] = v.toString();
+        }
+
+        return Arrays.asList(result);
     }
 
     private void createNewUser(String name, String username, String password) {
